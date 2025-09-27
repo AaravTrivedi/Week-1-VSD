@@ -85,17 +85,212 @@ Optimize and simplify the netlist using Yosys:
 - **GTKWave:** Waveform visualization
 - **Yosys:** Logic synthesis
 - **Sky130 PDK:** Process design kit with standard cell libraries
-</details> <details> <summary>Day 2 - Timing libs, Hierarchical vs Flat Synthesis and Efficient Flop Coding Styles</summary>
-Content for Day 2 goes here.
 
-</details> <details> <summary>Day 3 - Combinational and Sequential Optimizations</summary>
-Content for Day 3 goes here.
+</details> <details><summary>Day 2 - Timing Libraries, Hierarchical vs Flat Synthesis, and Efficient Flip-Flop Coding Styles</summary>
 
-</details> <details> <summary>Day 4 - GLS, Blocking vs Non-blocking and Synthesis-Simulation Mismatch</summary>
-Content for Day 4 goes here.
+Overview of PVT in Liberty Files
 
-</details> <details> <summary>Day 5 - Introduction to DFT</summary>
-Content for Day 5 goes here.
+The acronym PVT stands for Process, Voltage, and Temperature, which are key factors influencing chip behavior:
+- Process: Manufacturing variations like doping and lithography affect chip characteristics.
+- Voltage: Operating voltage variations impact speed and power usage.
+- Temperature: Temperature changes influence performance and leakage.
 
+A typical liberty file such as sky130_fd_sc_hd__tt_025C_1v80.lib indicates these parameters:
+- tt = typical process corner
+- 025C = 25°C temperature
+- 1v80 = 1.80V voltage
 
-</details
+These files provide detailed cell characterizations including power, timing, and drive strengths. Cells differ in size (e.g., and1, and2), where larger cells offer higher speed but consume more area and power.
+
+Cell Variants and Area Tradeoffs
+
+- Variants differ mainly in transistor sizes.
+- Larger cells: faster but larger and more power hungry.
+- Smaller cells: smaller area and less power, slower speed.
+
+Hierarchical vs Flattened Synthesis
+
+Stacked PMOS transistors increase resistance and slow down circuits; thus, NAND gates with parallel PMOS are preferred over NOR gates with stacked PMOS for better performance.
+
+Yosys preserves hierarchy by default with write_verilog. To flatten modules into one monolithic module, run:
+
+yosys> flatten
+
+Synthesizing at a submodule level helps when multiple instances exist or to simplify large designs:
+
+yosys> synth -top <submodule_name>
+
+Flip-Flop Reset Methods
+
+- Asynchronous reset: resets immediately when activated, ignoring clocks.
+- Synchronous reset: resets at clock edges only, easing timing verification.
+
+Mapping Flip-Flops in Yosys
+
+Map flip-flops to library cells after synthesis by specifying the liberty file:
+
+yosys> dfflibmap -liberty /path/to/sky130_fd_sc_hd__tt_025C_1v80.lib
+
+Optimization Overview
+
+Yosys optimizes gate count and performance, e.g., replacing multiply-by-2 with a shift. If no technology mapping is done, abc cannot generate a mapped netlist; show can display the current netlist.
+
+Essential Yosys Commands:
+
+read_verilog <file.v> : Read Verilog source code  
+read_liberty -lib <file.lib>: Load timing library  
+synth -top <module>: Synthesize top module  
+flatten: Remove hierarchy  
+dfflibmap -liberty <file>: Map flip-flops to cells  
+abc -liberty <file.lib>: Technology mapping  
+write_verilog <output.v>: Save synthesized netlist  
+show: Display netlist  
+
+</details><details><summary>Day 3 - Combinational and Sequential Optimization </summary>
+
+Combinational Logic Optimization
+
+- Constant propagation through circuit paths.
+- Boolean simplification by Karnaugh maps or Quine–McCluskey.
+
+Sequential Logic Optimization
+
+Basic: Propagate constants through registers.  
+Advanced:  
+- State reduction by removing unreachable states.  
+- Register cloning to reduce data path delay.  
+- Retiming to improve maximum clock frequency.
+
+Example: If D input of a flip-flop is always zero, output Q will remain zero—allowing the flip-flop removal. Async set/reset complicate such optimizations.
+
+Lab Examples: Simplified AND expressions and state machines demonstrated graphically. Sequential optimization examples highlight when flip-flops can be optimized.
+
+Optimization of Unused Outputs
+
+Logic not dependent on all outputs can be trimmed. Synthesis report reflects whether flip-flops are removed accordingly.
+
+</details><details><summary>Day 4 - Gate-Level Simulation (GLS), Blocking vs Non-Blocking Assignments, and Synthesis-Simulation Discrepancies</summary>
+
+What is GLS
+
+Gate-Level Simulation validates logical correctness and timing after synthesis by simulating the gate-level netlist.
+
+Importance of GLS
+
+- Ensures design behaves functionally like RTL.
+- Confirms timing constraints are satisfied.
+
+GLS with Iverilog
+
+GLS requires gate models with timing in standard cell libraries.
+
+Typical Netlist vs RTL Example
+
+RTL: assign y = (a & b) | c;  
+
+Gate-level:  
+and a1(m, a, b);  
+or o1(y, c, m);
+
+Simulation triggers only when inputs change.
+
+Why Functional Validation is Required
+
+- Missing sensitivity lists (always @(sel) vs always @(*)) cause simulation errors.
+- Difference between blocking (=) and non-blocking (<=) assignments affects execution order and simulation accuracy.
+
+Blocking vs Non-Blocking Assignment Example
+
+Blocking:  
+q = q0;  
+q0 = d;  
+
+Non-blocking:  
+q0 <= d;  
+q <= q0;
+
+Parallel updates simulate real flip-flop behavior more accurately.
+
+Coding Caveats
+
+Certain combinational constructs may produce correct outputs with different assignment types but GLS helps verify timing and correctness.
+
+Labs
+
+Multiplexer examples demonstrate proper GLS coding and highlight synthesis-simulation mismatches when coding styles are incorrect.
+
+</details><details><summary>Day 5 - Synthesis Optimization</summary>
+
+If-Else and Elif Ladders
+
+These constructs implement prioritized conditional logic, synthesizing into cascaded multiplexers.
+
+- The first true condition takes precedence.
+- An else block provides a default when no conditions meet.
+
+Example:
+
+always @(*) begin  
+  if (cond1)  
+    y = a;  
+  else if (cond2)  
+    y = b;  
+  else  
+    y = e;  
+end
+
+Inferred Latch Risks and How to Avoid Them
+
+Missing assignments in certain branches lead to inferred latches—usually undesirable.
+
+Prevent Latches By:
+
+- Including else or default assignments.
+- Explicitly assigning to hold values when needed.
+
+Case Statement Usage
+
+- Switch-like selection for output assignments.
+- Must cover all possible selectors with assignments or default to avoid latches.
+- No priority; cases are mutually exclusive.
+
+Example:
+
+always @(*) begin  
+  case(sel)  
+    2'b00: y = a;  
+    2'b01: y = b;  
+    2'b10: y = c;  
+    default: y = d;  
+  endcase  
+end
+
+Verilog Loops
+
+- For loops in always blocks: behavioral, unrolled at synthesis.
+- Generate loops: instantiate multiple hardware modules outside behavioral blocks.
+
+Example:
+
+// Behavioral for loop  
+always @(*) begin  
+  for (i = 0; i < 8; i = i+1)  
+    sum[i] = a[i] ^ b[i];  
+end  
+
+// Generate loop example  
+genvar i;  
+generate  
+  for (i = 0; i < 4; i = i+1) begin : and_gen  
+    and u_and(out[i], in1[i], in2[i]);  
+  end  
+endgenerate
+
+Summary Table
+
+Construct: if-else ladder — Recommendation: Always provide else/default case  
+Construct: case statements — Recommendation: Assign all outputs; use default  
+</details>
+Construct: always for loop — Recommendation: Use for repeated assignments only  
+Construct: generate for loop — Recommendation: Use for hardware instantiation outside always blocks
+
