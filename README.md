@@ -16,6 +16,46 @@ gtkwave tb_good_mux.vcd
 The testbench applies stimulus to the design for functional verification.
 <img width="1229" height="820" alt="Screenshot from 2025-09-27 16-18-46" src="https://github.com/user-attachments/assets/ec62cf35-6c7b-499b-84e6-64669f97b22e" />
 
+## Liberty Files (.lib)
+
+Liberty files contain characterization data for standard cell libraries:
+
+- **Content:** Logical modules (AND, OR, NOT, etc.)
+- **Variations:** Multiple drive strengths (slow, medium, fast)
+- **Configurations:** Different input counts (2-input, 3-input, 4-input gates)
+- **Purpose:** Provides timing, power, and area information for synthesis optimization
+
+## Timing Considerations
+
+### Setup Time Constraint
+For proper sequential circuit operation:
+
+```
+T_clk > T_cq_A + T_combi + T_setup_B
+```
+
+Where:
+- `T_clk`: Clock period
+- `T_cq_A`: Clock-to-Q delay of source flip-flop
+- `T_combi`: Combinational logic delay
+- `T_setup_B`: Setup time of destination flip-flop
+
+### Maximum Frequency
+```
+f_max = 1/T_clk
+```
+
+### Cell Selection Strategy
+
+**Fast Cells:**
+- Reduce combinational delays
+- Help meet setup time requirements
+- Higher power consumption and area
+
+**Slow Cells:**
+- Provide necessary delays for hold time requirements
+- Prevent race conditions
+- Lower power and area
 
 ## Synthesis Using Yosys
 
@@ -39,6 +79,12 @@ Optimize and simplify the netlist using Yosys:
 <img width="791" height="362" alt="Screenshot from 2025-09-27 17-29-13" src="https://github.com/user-attachments/assets/6fdcf278-429d-4f3f-907c-d9f3c18acb0d" />
 <img width="791" height="362" alt="Screenshot from 2025-09-27 17-29-13" src="https://github.com/user-attachments/assets/3deb47f5-f4ac-4fe0-b231-e087336cc790" />
 
+## Workshop Tools Summary
+
+- **Iverilog:** Simulation and verification
+- **GTKWave:** Waveform visualization
+- **Yosys:** Logic synthesis
+- **Sky130 PDK:** Process design kit with standard cell libraries
 </details> <details> <summary>Day 2 - Timing libs, Hierarchical vs Flat Synthesis and Efficient Flop Coding Styles</summary>
 Content for Day 2 goes here.
 
