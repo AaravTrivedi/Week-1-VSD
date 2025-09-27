@@ -10,13 +10,21 @@ output of simulator is a vcd fiie:
 gtkwave tb_good_mux.vcd
 ```
 ## Design and Testbench
-- The testbench applies stimulus to the design for functional verification.
+The testbench applies stimulus to the design for functional verification.
 
 ## Synthesis Using Yosys
 
 - Yosys synthesizer converts RTL to a gate-level netlist.
 - It maps logic to standard cells from the provided `.lib`.
 - Use the same testbench to verify the synthesized netlist functionality.
+
+## Generating Netlist
+
+Run Yosys with your RTL to produce the synthesized gate-level netlist:
+
+## Simplifying the Netlist
+
+Optimize and simplify the netlist using Yosys:
 
 </details> <details> <summary>Day 2 - Timing libs, Hierarchical vs Flat Synthesis and Efficient Flop Coding Styles</summary>
 Content for Day 2 goes here.
